@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <script src="../../../node_modules/three/build/three.min.js"></script>
+  <script src="../../controls/FlyControls.js"></script>
+  <script src="../../controls/OrbitControls.js"></script>
+  <script src="../../utils/Detector.js"></script>
+  <script src="../../utils/stats.min.js"></script>
+  <script src="../../utils/dat.gui.min.js"></script>
+  <script src="../../utils/tween.min.js"></script>
+  <script src="../../loaders/JSONLoader.js"></script>
+  <title>Animation</title>
+</head>
+<body onload="drowView()">
+  <script>
+    if ( !Detector.webgl ) {
+      Detector.addGetWebGLMessage()
+    }
+
+    let camera
+    let renderer
+    let scene
+    let stats
+    let cube
+    let controls
+    let datGui
+    let tween
+    let mixer
+    let action
+    let animation = true
+    let clock = new THREE.Clock()
+
+    const width = window.innerWidth
+    const height = window.innerHeight
+    
+    function windowResize () {
+      camera.aspect = width / height
+      camera.updateProjectionMatrix()
+      renderer.setSize(width, height)
+    }
+
+    function initBase () {
+      scene = new THREE.Scene()
+      const axesHelper = new THREE.AxesHelper(10000)
+      scene.add(axesHelper)
+
+      camera = new THREE.PerspectiveCamera( 45, width / height, 1, 10000 )
+      camera.position.set(0, 5, 40)
+
+      renderer = new THREE.WebGLRenderer({antialias: true})
+      renderer.setPixelRatio(window.devicePixelRatio)
+      renderer.setSize(width, height)
+      renderer.setClearColor(0xeeeeee)
+      document.body.appendChild(renderer.domElement)
+
+      window.addEventListener('resize', windowResize)
+    }
+
+    function initLight () {
+      const alight = new THREE.AmbientLight(0x404040)
+      scene.add( alight )
+
+      const light = new THREE.DirectionalLight(0xffffff)
+      light.position.set(0, 10, 10 )
+      light.castShadow = true
+      light.shadow.camera.top = 10
+      light.shadow.camera.bottom = -10
+      light.shadow.camera.left = -10
+      light.shadow.camera.right = 10 //告诉平行光需要开启阴影投射
+      light.castShadow = true
+      scene.add(light)
+    }
+
+    function initContent () {
+      // 地板
+      var mesh = new THREE.Mesh( new THREE.PlaneBufferGeometry( 200, 200 ), new THREE.MeshPhongMaterial( { color: 0xffffff, depthWrite: false } ) )
+      mesh.rotation.x = - Math.PI / 2
+      mesh.receiveShadow = true
+      scene.add( mesh )
+
+      var grid = new THREE.GridHelper( 200, 50, 0x000000, 0x000000 )
+      grid.material.opacity = 0.2
+      grid.material.transparent = true
+      scene.add( grid )
+
+      //添加两个对比模型，一个添加凹凸贴图纹理
+      var bump = new THREE.TextureLoader().load("../../textures/brick_bump.jpg")
+      var normal = new THREE.TextureLoader().load("../../textures/brick_diffuse.jpg")
+      var material1 = new THREE.MeshPhongMaterial({ map: normal })
+
+      material1.bumpMap = bump
+      material1.bumpScale = 0.05
+
+      var geometry = new THREE.CubeGeometry(8, 8, 4)
+      cube1 = new THREE.Mesh(geometry, material1);
+      cube1.position.set(-5, 5, 0);
+      scene.add(cube1);
+
+      //创建不带凹凸纹理的图形
+      var material2 = new THREE.MeshPhongMaterial({
+        map:normal
+      });
+
+      cube2 = new THREE.Mesh(geometry, material2);
+      cube2.position.set(5, 5, 0);
+      scene.add(cube2);
+    }
+
+    function initTool (dom) {
+      stats = new Stats()
+      document.body.appendChild(stats.dom)
+      
+      const gui = {}
+      datGui = datGui = new dat.GUI()
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement)
+        // if use animate，delete it
+        //controls.addEventListener( 'change', render );
+        // 使动画循环使用时阻尼或自转 意思是否有惯性
+        controls.enableDamping = true
+        //动态阻尼系数 就是鼠标拖拽旋转灵敏度
+        //controls.dampingFactor = 0.25;
+        //是否可以缩放
+        controls.enableZoom = true
+        //是否自动旋转
+        // controls.autoRotate = true
+        //设置相机距离原点的最近距离
+        // controls.minDistance  = 200
+        //设置相机距离原点的最远距离
+        // controls.maxDistance  = 600
+        //是否开启右键拖拽
+        controls.enablePan = true
+    }
+    function render () {
+      const delta = clock.getDelta()
+      mixer && mixer.update(delta)
+      // cube && (cube.rotateY(0.01))
+      // cube && (cube.position.z += 1)
+      // console.log(cube && typeof cube.position)
+      // cube && camera.lookAt(cube.position)
+      // cube && (controls.target = cube.position)
+      if (cube) {
+        cube.position.z += 1
+        if (cube.position.z > 5000) {
+          cube.position.z = 0
+        }
+        controls.target = cube.position
+      }
+      controls.update()
+      renderer.render(scene, camera)
+      stats.update()
+      requestAnimationFrame(render)
+    }
+    function drowView () {
+      initBase()
+      initLight()
+      initContent()
+      initTool()
+      render()
+    }
+  </script>
+</body>
+</html>

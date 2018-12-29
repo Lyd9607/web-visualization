@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <script src="../../../node_modules/three/build/three.min.js"></script>
+  <script src="../../controls/FlyControls.js"></script>
+  <script src="../../controls/OrbitControls.js"></script>
+  <script src="../../utils/Detector.js"></script>
+  <script src="../../utils/stats.min.js"></script>
+  <script src="../../utils/dat.gui.min.js"></script>
+  <title>template</title>
+</head>
+<body onload="drowView()">
+  <script>
+    if ( !Detector.webgl ) {
+      Detector.addGetWebGLMessage()
+    }
+
+    let camera
+    let renderer
+    let scene
+    let stats
+    let controls
+    let datGui
+
+    const width = window.innerWidth
+    const height = window.innerHeight
+    
+    function windowResize () {
+      camera.aspect = width / height
+      camera.updateProjectionMatrix()
+      renderer.setSize(width, height)
+    }
+
+    function initBase () {
+      scene = new THREE.Scene()
+      const axesHelper = new THREE.AxesHelper(100)
+      scene.add(axesHelper)
+
+      camera = new THREE.PerspectiveCamera( 45, width / height, 1, 1000 )
+      camera.position.set(50, 50, 50)
+
+      renderer = new THREE.WebGLRenderer({antialias: true})
+      renderer.setSize(width, height)
+      renderer.setClearColor(0xeeeeee)
+      document.body.appendChild(renderer.domElement)
+
+      window.addEventListener('resize', windowResize)
+    }
+
+    function initLight () {
+      const light = new THREE.AmbientLight(0x404040)
+      scene.add( light )
+    }
+
+    function initContent () {
+      const loader = new THREE.FontLoader()
+      loader.load(
+        '../../fonts/optimer_regular.typeface.json',
+        font => {
+          const geometry = new THREE.TextGeometry( 'Hello World !', {
+            font,
+            size: 100,
+            height: 1,
+            curveSegments: 12,
+            bevelEnabled: true,
+            bevelThickness: 10,
+            bevelSize: 8,
+            bevelSegments: 5
+          } )
+          const material = new THREE.MeshPhongMaterial()
+          const text = new THREE.Mesh(geometry, material)
+          geometry.scale(0.08, 0.08, 0.08)
+          text.position.set(-50, 5, 0)
+
+          const copyText = text.clone()
+          copyText.material = new THREE.MeshPhongMaterial()
+          copyText.material.transparent = true
+          copyText.material.opacity = 0.2
+
+          copyText.matrix.makeScale(1, 2, 1)
+          const m = new THREE.Matrix4()
+          m.set(
+            1, 0, 0, -50,
+            0, Math.cos(Math.PI/2), -Math.sin(Math.PI/2), 0,
+            0, Math.sin(Math.PI/2), Math.cos(Math.PI/2), 0,
+            0, 0, 0, 1
+          )
+          copyText.applyMatrix(m)
+
+          const group = new THREE.Group()
+          group.add(text, copyText)
+          group.rotateY(Math.PI/6)
+          scene.add(group)
+        },
+        xhr => {
+          console.log( (xhr.loaded / xhr.total * 100) + '% loaded' )
+        },
+        err => {
+          console.log( 'An error happened' )
+        }
+      )
+    }
+
+    function initTool (dom) {
+      stats = new Stats()
+      document.body.appendChild(stats.dom)
+      
+      const gui = {}
+      datGui = datGui = new dat.GUI()
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement)
+        // if use animate，delete it
+        //controls.addEventListener( 'change', render );
+        // 使动画循环使用时阻尼或自转 意思是否有惯性
+        controls.enableDamping = true
+        //动态阻尼系数 就是鼠标拖拽旋转灵敏度
+        //controls.dampingFactor = 0.25;
+        //是否可以缩放
+        controls.enableZoom = true
+        //是否自动旋转
+        // controls.autoRotate = true
+        //设置相机距离原点的最近距离
+        // controls.minDistance  = 200
+        //设置相机距离原点的最远距离
+        // controls.maxDistance  = 600
+        //是否开启右键拖拽
+        controls.enablePan = true
+    }
+    function render () {
+      controls.update()
+      renderer.render(scene, camera)
+      stats.update()
+      requestAnimationFrame(render)
+    }
+    function drowView () {
+      initBase()
+      initLight()
+      initContent()
+      initTool()
+      render()
+    }
+  </script>
+</body>
+</html>

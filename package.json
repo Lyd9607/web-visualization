@@ -1,0 +1,15 @@
+{
+  "name": "web-visualization",
+  "version": "1.0.0",
+  "description": "svg three.js canvas webgl",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["svg", "three.js", "canvas", "webgl"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "three": "^0.99.0"
+  }
+}

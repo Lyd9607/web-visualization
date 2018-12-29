@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>webgl-point</title>
+</head>
+<body onload="main()">
+  <canvas width="500" height="500" id="gl">
+    Please use the browser supporting canvas!
+  </canvas>
+  <script src="../../../lib/webgl-utils.js"></script>
+  <script src="../../../lib/webgl-debug.js"></script>
+  <script src="../../../lib/cuon-utils.js"></script>
+  <script>
+    // 顶点着色器，名称固定
+    // 声明attribute变量，只有顶点着色器可用
+    const VSHADER_SOURCE = `
+      attribute vec4 a_Position;
+      void main () {
+        gl_Position = a_Position;
+        gl_PointSize = 20.0;
+      }
+    `
+    // 片元着色器， 名称固定
+    const FSHADER_SOURCE = `
+      void main () {
+        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+      }
+    `
+    function main () {
+      const cvs = document.querySelector('#gl')
+      const gl = getWebGLContext(cvs)
+
+      if (!gl) {
+        console.log('Failed get the WebGLRenderingContext')
+        return
+      }
+      if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+        console.log('Failed render shaders')
+        return
+      }
+      // 获取attribute变量的存储位置
+      const a_Position = gl.getAttribLocation(gl.program, 'a_Position')
+      if (a_Position < 0) {
+        console.log('Failed to get the storage loaction of a_Position')
+        return
+      }
+
+      // 注册鼠标事件响应函数
+      cvs.onmousedown = function(e) {
+        click(e, gl, cvs, a_Position)
+      }
+
+      // 指定清空canvas的颜色 |rgba
+      gl.clearColor(0.5, 0.5, 0.0, 1.0)
+      // 清空canvas(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT | STENCIL_BUFFER_BIT)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+    }
+
+    const g_points = []
+    function click(e, gl, cvs, a_Position) {
+      let x = e.clientX
+      let y = e.clientY
+      const rect = e.target.getBoundingClientRect()
+      // x = ((x - rect.left) - cvs.height/2) / (cvs.height/2)
+      // y = (cvs.width/2 - (y - rect.top)) / (cvs.width/2)
+      x = (x - rect.left - cvs.width/2) / (cvs.width/2)
+      y = -(y - rect.top - cvs.height/2) / (cvs.height/2)
+
+      // gl.vertexAttrib2f(a_Position, x, y)
+      // gl.drawArrays(gl.POINTS, 0, 1)
+
+      console.log(x, y)
+      g_points.push(x, y)
+
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      
+      for (let i = 0; i < g_points.length; i+=2) {
+        gl.vertexAttrib2f(a_Position, g_points[i], g_points[i+1])
+        gl.drawArrays(gl.POINTS, 0, 1)
+      }
+    }
+  </script>
+</body>
+</html>

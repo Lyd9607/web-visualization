@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <script src="../../../node_modules/three/build/three.min.js"></script>
+  <script src="../../controls/FlyControls.js"></script>
+  <script src="../../controls/OrbitControls.js"></script>
+  <script src="../../utils/Detector.js"></script>
+  <script src="../../utils/stats.min.js"></script>
+  <script src="../../utils/dat.gui.min.js"></script>
+  <script src="../../utils/tween.min.js"></script>
+  <script src="../../loaders/JSONLoader.js"></script>
+  <title>Animation</title>
+</head>
+<body onload="drowView()">
+  <script>
+    if ( !Detector.webgl ) {
+      Detector.addGetWebGLMessage()
+    }
+
+    let camera
+    let renderer
+    let scene
+    let stats
+    let cube
+    let controls
+    let datGui
+    let tween
+    let mixer
+    let action
+    let animation = true
+    let clock = new THREE.Clock()
+
+    const width = window.innerWidth
+    const height = window.innerHeight
+    
+    function windowResize () {
+      camera.aspect = width / height
+      camera.updateProjectionMatrix()
+      renderer.setSize(width, height)
+    }
+
+    function initBase () {
+      scene = new THREE.Scene()
+      const axesHelper = new THREE.AxesHelper(10000)
+      scene.add(axesHelper)
+
+      camera = new THREE.PerspectiveCamera( 45, width / height, 1, 10000 )
+      camera.position.set(500, 500, 500)
+
+      renderer = new THREE.WebGLRenderer({antialias: true})
+      renderer.setPixelRatio(window.devicePixelRatio)
+      renderer.setSize(width, height)
+      renderer.setClearColor(0xeeeeee)
+      document.body.appendChild(renderer.domElement)
+
+      window.addEventListener('resize', windowResize)
+    }
+
+    function initLight () {
+      const light = new THREE.AmbientLight(0x404040)
+      scene.add( light )
+    }
+
+    function initContent () {
+      const loader = new THREE.LegacyJSONLoader()
+      loader.load(
+        '../../models/animated/horse.js',
+        geometry => {
+          const material = new THREE.MeshLambertMaterial( { vertexColors: THREE.FaceColors, morphTargets: true } )
+          cube = new THREE.Mesh( geometry, material )
+          cube.position.set(100, 0, 100)
+          scene.add( cube )
+
+          mixer = new THREE.AnimationMixer(cube)
+          const clip = THREE.AnimationClip.CreateFromMorphTargetSequence('run', geometry.morphTargets, 30)
+          action = mixer.clipAction(clip)
+          action.setDuration(1).play()
+        },
+        xhr => {
+          console.log( (xhr.loaded / xhr.total * 100) + '% loaded' )
+        },
+        err => {
+          console.error( 'An error happened' )
+        }
+      )
+    }
+
+    function initTool (dom) {
+      stats = new Stats()
+      document.body.appendChild(stats.dom)
+      
+      const gui = {}
+      datGui = datGui = new dat.GUI()
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement)
+        // if use animate，delete it
+        //controls.addEventListener( 'change', render );
+        // 使动画循环使用时阻尼或自转 意思是否有惯性
+        controls.enableDamping = true
+        //动态阻尼系数 就是鼠标拖拽旋转灵敏度
+        //controls.dampingFactor = 0.25;
+        //是否可以缩放
+        controls.enableZoom = true
+        //是否自动旋转
+        // controls.autoRotate = true
+        //设置相机距离原点的最近距离
+        // controls.minDistance  = 200
+        //设置相机距离原点的最远距离
+        // controls.maxDistance  = 600
+        //是否开启右键拖拽
+        controls.enablePan = true
+    }
+    function render () {
+      const delta = clock.getDelta()
+      mixer && mixer.update(delta)
+      // cube && (cube.rotateY(0.01))
+      // cube && (cube.position.z += 1)
+      // console.log(cube && typeof cube.position)
+      // cube && camera.lookAt(cube.position)
+      // cube && (controls.target = cube.position)
+      if (cube) {
+        cube.position.z += 1
+        if (cube.position.z > 5000) {
+          cube.position.z = 0
+        }
+        controls.target = cube.position
+      }
+      controls.update()
+      renderer.render(scene, camera)
+      stats.update()
+      requestAnimationFrame(render)
+    }
+    function drowView () {
+      initBase()
+      initLight()
+      initContent()
+      initTool()
+      render()
+    }
+  </script>
+</body>
+</html>

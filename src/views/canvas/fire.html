@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>canvas-clock</title>
+  <style>
+    .box {
+      position: relative;
+      margin: 50px auto;
+      width: 500px;
+      height: 500px;
+    }
+    .back_cvs {
+      position: absolute;
+      display: block;
+    }
+    .front_cvs {
+      position: absolute;
+      display: block;
+      z-index: 10000;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <!-- 分层渲染动画 -->
+    <canvas width="500" height="500" class="front_cvs"></canvas>
+    <canvas width="500" height="500" class="back_cvs"></canvas>
+  </div>
+  <script>
+    const back_cvs = document.querySelector('.back_cvs')
+    const back_ctx = back_cvs.getContext('2d')
+    back_ctx.save()
+
+    const front_cvs = document.querySelector('.front_cvs')
+    const ctx = front_cvs.getContext('2d')
+    ctx.save()
+    
+    drowStaticBg(back_ctx)
+    animate(ctx)
+    const t = setInterval(() => animate(ctx), 1000)
+
+    function cleanCtxStyle (ctx) {
+      ctx.restore()
+      ctx.save()
+    }
+
+    function drowLine (ctx, num, width, style, deg, startY, endY, time) {
+      for (let i=1; i<=num; i++) {
+        ctx.beginPath()
+        ctx.globalAlpha=1
+        ctx.lineWidth=width
+        ctx.lingCap='round'
+        ctx.strokeStyle=style
+        ctx.translate(250, 160)
+        if (num === 1) {
+          ctx.rotate(time*deg*Math.PI/180)
+        } else {
+          ctx.rotate(i*deg*Math.PI/180)
+        }
+        ctx.moveTo(0, startY)
+        ctx.lineTo(0, endY)
+        ctx.stroke()
+        ctx.closePath()
+        cleanCtxStyle(ctx)
+      }
+    }
+
+    function drowStaticBg (back_ctx) {
+      const grad = back_ctx.createLinearGradient(0, 0, 500, 500)
+      grad.addColorStop(0, 'blue')
+      grad.addColorStop(0.5, 'red')
+      grad.addColorStop(1, 'green')
+
+      // 表盘
+      back_ctx.beginPath()
+      back_ctx.fillStyle=grad
+      back_ctx.lineWidth=5
+      back_ctx.globalAlpha=0.2
+      back_ctx.arc(250, 160, 150, 0, 2*Math.PI)
+      back_ctx.stroke()
+      back_ctx.fill()
+      back_ctx.closePath()
+      cleanCtxStyle(back_ctx)
+
+      // 时钟刻度
+      drowLine(back_ctx, 12, 1.5, 'black', 30, -148, -133)
+      // 分钟刻度
+      drowLine(back_ctx, 60, 1, 'grey', 6, -148, -143)
+
+      //style
+      back_ctx.beginPath()
+      back_ctx.globalAlpha=0.7
+      back_ctx.lineWidth=1
+      back_ctx.strokeStyle="0xD1EEEE"
+      back_ctx.translate(250, 160)
+      back_ctx.arc(0, 0, 5, 0, 2*Math.PI)
+      back_ctx.stroke()
+      back_ctx.closePath()
+      cleanCtxStyle(back_ctx)
+    }
+
+    function animate (ctx) {
+      const time = new Date()
+      const minute = time.getMinutes()
+      const sec = time.getSeconds()
+      let hour = time.getHours()
+      hour=hour + minute / 60
+      hour=hour > 12 ? hour - 12 : hour
+      // 清空画布
+      ctx.clearRect(0, 0, 500, 500)
+      // 时针
+      drowLine(ctx, 1, 3, 'black', 30, 0, -70, hour)
+      // 分针
+      drowLine(ctx, 1, 2, 'grey', 6, 0, -100, minute)
+      // 秒针
+      drowLine(ctx, 1, 1, 'red', 6, 0, -120, sec)
+    }
+  </script>
+</body>
+</html>

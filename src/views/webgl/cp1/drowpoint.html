@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>webgl-point</title>
+</head>
+<body onload="main()">
+  <canvas width="500" height="500" id="gl">
+    Please use the browser supporting canvas!
+  </canvas>
+  <script src="../../../lib/webgl-utils.js"></script>
+  <script src="../../../lib/webgl-debug.js"></script>
+  <script src="../../../lib/cuon-utils.js"></script>
+  <script>
+    // 顶点着色器，名称固定
+    const VSHADER_SOURCE = `
+      void main () {
+        gl_Position = vec4(0.0, 0.5, 0.5, 1.0);
+        gl_PointSize = 20.0;
+      }
+    `
+    // 片元着色器， 名称固定
+    const FSHADER_SOURCE = `
+      void main () {
+        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+      }
+    `
+    function main () {
+      const cvs = document.querySelector('#gl')
+      const gl = getWebGLContext(cvs)
+
+      if (!gl) {
+        console.log('Failed get the WebGLRenderingContext')
+        return
+      }
+      if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+        console.log('Failed render shaders')
+        return
+      }
+      // 指定清空canvas的颜色 |rgba
+      gl.clearColor(0.5, 0.5, 0.0, 1.0)
+      // 清空canvas(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT | STENCIL_BUFFER_BIT)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+
+      // 绘制一个点
+      gl.drawArrays(gl.POINTS, 0, 1)
+    }
+  </script>
+</body>
+</html>
