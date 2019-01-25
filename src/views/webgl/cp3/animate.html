@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>webgl-point</title>
+</head>
+<body onload="main()">
+  <canvas width="500" height="500" id="gl">
+    Please use the browser supporting canvas!
+  </canvas>
+  <script src="../../../lib/webgl-utils.js"></script>
+  <script src="../../../lib/webgl-debug.js"></script>
+  <script src="../../../lib/cuon-utils.js"></script>
+  <script src="../../../lib/cuon-matrix.js"></script>
+  <script>
+    // 顶点着色器，名称固定
+    // 声明attribute变量，只有顶点着色器可用
+    const VSHADER_SOURCE = `
+      attribute vec4 a_Position;
+      uniform mat4 u_ModelMatrix;
+      void main () {
+        gl_Position = u_ModelMatrix * a_Position;
+      }
+    `
+    // 片元着色器， 名称固定
+    const FSHADER_SOURCE = `
+      void main () {
+        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+      }
+    `
+
+    const ANGLE_STEP = 45
+
+    function main () {
+      const cvs = document.querySelector('#gl')
+      const gl = getWebGLContext(cvs)
+
+      if (!gl) {
+        console.log('Failed get the WebGLRenderingContext')
+        return
+      }
+      if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+        console.log('Failed render shaders')
+        return
+      }
+
+      // 设置顶点位置
+      const n = initVertexBuffers(gl)
+      if (n < 0) {
+        console.log('Failed to set the position of the vertices')
+        return
+      }
+      
+      // 指定清空canvas的颜色 |rgba
+      gl.clearColor(0.5, 0.5, 0.0, 1.0)
+
+      const u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix')
+      let currentAngle = 0
+      const modelMatrix = new Matrix4()
+      
+      const tick = function () {
+        currentAngle = animate(currentAngle)
+        draw(gl, n, currentAngle, modelMatrix, u_ModelMatrix)
+        requestAnimationFrame(tick)
+      }
+
+      tick()
+    }
+
+    function initVertexBuffers(gl) {
+      const vertices = new Float32Array([
+        0.0, 0.5, -0.5, -0.5, 0.5, -0.5
+      ])
+      const n = 3
+      // 创建缓冲区
+      const vertexBuffer = gl.createBuffer()
+      if (!vertexBuffer) {
+        return -1
+      }
+
+      // 将缓冲区对象绑定到目标
+      gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
+      // 像缓冲区对象写入数据
+      gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW)
+      
+      const a_Position = gl.getAttribLocation(gl.program, 'a_Position')
+      if (a_Position < 0) {
+        console.log('Failed to get the storage loaction of a_Position')
+        return
+      }
+
+      // 将缓冲区对象分配给a_Position变量
+      gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0)
+
+      // 连接a_Position变量和分配给他的缓冲区
+      gl.enableVertexAttribArray(a_Position)
+      
+      return n
+    }
+
+    function draw (gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+      modelMatrix.setRotate(currentAngle, 0, 0, 1)
+      gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements)
+      gl.clear(gl.COLOR_BUFFER_BIT)
+      gl.drawArrays(gl.TRIANGLES, 0, n)
+    }
+
+    let g_last = Date.now()
+    function animate (angle) {
+      const now = Date.now()
+      const elapsed = now - g_last
+      g_last = now
+      let newAngle = angle + (ANGLE_STEP + elapsed) / 1000
+      return newAngle %= 360
+    }
+  </script>
+</body>
+</html>
